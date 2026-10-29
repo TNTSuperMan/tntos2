@@ -22,6 +22,16 @@ impl ClassCode {
         }
     }
 }
+impl core::fmt::Debug for ClassCode {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let ClassCode {
+            base,
+            sub,
+            interface,
+        } = self;
+        write!(f, "{base:>02X} {sub:>02X} {interface:>02X}")
+    }
+}
 
 #[derive(Default)]
 pub struct Device {
@@ -34,8 +44,16 @@ pub struct Device {
 impl core::fmt::Debug for Device {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let Device {
-            bus, device, func, ..
+            bus,
+            device,
+            func,
+            header_type,
+            class_code,
+            ..
         } = self;
-        write!(f, "{bus:>02X}:{device:>02X}.{func}")
+        write!(
+            f,
+            "{bus:>02X}:{device:>02X}.{func} head {header_type:>02X}, class {class_code:?}"
+        )
     }
 }
