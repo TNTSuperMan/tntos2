@@ -1,10 +1,13 @@
 #![no_main]
 #![no_std]
 
-use crate::screen::SCREEN;
+use crate::{pci::scan_all_bus, screen::SCREEN};
 use core::fmt::Write;
 
+mod asm;
+mod pci;
 mod screen;
+mod utils;
 
 fn halt() -> ! {
     loop {
@@ -30,12 +33,16 @@ pub extern "sysv64" fn kernel_entry(options: *const shared::KernelEntrypointOpti
     }
 
     SCREEN.draw_rect(0, 0, SCREEN.width(), SCREEN.height(), screen::Color::WHITE);
-    SCREEN
-        .str_writer(100, 100, screen::Color::BLACK)
-        .write_str("Hello, World!")
-        .unwrap();
+    let mut writer = SCREEN.str_writer(100, 100, screen::Color::BLACK);
+    writer.write_str("Hello, World!\n").unwrap();
 
-    todo!();
+    let devices = scan_all_bus().unwrap();
+
+    for dev in devices.iter() {
+        writer.write_fmt(format_args!("{dev:?}\n")).unwrap();
+    }
+
+    halt();
 }
 
 #[panic_handler]
