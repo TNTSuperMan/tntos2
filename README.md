@@ -18,6 +18,9 @@ MSRVは知りませんとりあえず1.99.1使ってます
 次に[Bun](https://bun.com)入れてください  
 `bun scripts/bdfload.ts`でフォントバイナリを作ります
 
+そしてqemu入れてください  
+詳しく書くのはめんどいので省略ですが[uefi-rsチュートリアルのとこ](https://rust-osdev.github.io/uefi-rs/tutorial/vm.html)とか参考になると思います
+
 vscodeの設定ファイルは無いです、zedの設定ファイルだけ入ってます
 
 ## 著作権表記とか
