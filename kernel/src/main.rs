@@ -10,7 +10,6 @@ use core::{fmt::Write, ops::ControlFlow};
 mod asm;
 mod pci;
 mod screen;
-mod utils;
 
 fn halt() -> ! {
     loop {
