@@ -5,7 +5,7 @@ use crate::{
     pci::scan_all_bus,
     screen::{Color, SCREEN},
 };
-use core::fmt::Write;
+use core::{fmt::Write, ops::ControlFlow};
 
 mod asm;
 mod pci;
@@ -42,11 +42,10 @@ pub extern "sysv64" fn kernel_entry(options: *const shared::KernelEntrypointOpti
     let mut writer = screen.str_writer(100, 100, Color::BLACK);
     writer.write_str("Hello, World!\n").unwrap();
 
-    let devices = scan_all_bus().unwrap();
-
-    for dev in devices.iter() {
+    let _ = scan_all_bus::<()>(&mut |dev| {
         writer.write_fmt(format_args!("{dev:?}\n")).unwrap();
-    }
+        ControlFlow::Continue(())
+    });
 
     halt();
 }
