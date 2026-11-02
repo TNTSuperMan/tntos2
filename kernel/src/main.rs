@@ -2,14 +2,15 @@
 #![no_std]
 
 use crate::{
-    pci::scan_all_bus,
+    pci::{DEVICES, init_pci},
     screen::{Color, SCREEN},
 };
-use core::{fmt::Write, ops::ControlFlow};
+use core::fmt::Write;
 
 mod asm;
 mod pci;
 mod screen;
+mod utils;
 
 fn halt() -> ! {
     loop {
@@ -34,6 +35,8 @@ pub extern "sysv64" fn kernel_entry(options: *const shared::KernelEntrypointOpti
         uefi::table::set_system_table(table.as_ptr());
     }
 
+    init_pci();
+
     let mut screen_lock = SCREEN.lock();
     let screen = screen_lock.as_mut().unwrap();
 
@@ -41,10 +44,9 @@ pub extern "sysv64" fn kernel_entry(options: *const shared::KernelEntrypointOpti
     let mut writer = screen.str_writer(100, 100, Color::BLACK);
     writer.write_str("Hello, World!\n").unwrap();
 
-    let _ = scan_all_bus::<()>(&mut |dev| {
-        writer.write_fmt(format_args!("{dev:?}\n")).unwrap();
-        ControlFlow::Continue(())
-    });
+    for device in DEVICES.get().unwrap().iter() {
+        writer.write_fmt(format_args!("{device:?}\n")).unwrap();
+    }
 
     halt();
 }
