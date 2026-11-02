@@ -1,5 +1,3 @@
-use core::cell::OnceCell;
-
 #[derive(Clone, Copy)]
 pub struct Color {
     pub r: u8,
@@ -16,76 +14,71 @@ impl Color {
     pub const fn from_rgb(r: u8, g: u8, b: u8) -> Color {
         Color { r, g, b }
     }
-    pub fn to_u32(&self, format: &shared::PixelFormat) -> u32 {
+    pub fn to_arr(&self, format: &shared::PixelFormat) -> [u8; 4] {
         match format {
-            shared::PixelFormat::Rgb => u32::from_le_bytes([self.r, self.g, self.b, 0]),
-            shared::PixelFormat::Bgr => u32::from_le_bytes([self.b, self.g, self.r, 0]),
+            shared::PixelFormat::Rgb => [self.r, self.g, self.b, 0],
+            shared::PixelFormat::Bgr => [self.b, self.g, self.r, 0],
         }
     }
 }
 
-pub static SCREEN: Screen = Screen::new();
+pub static SCREEN: spin::Mutex<Option<Screen>> = spin::Mutex::new(None);
 
 static FONT: &'static [u8; 16 * 128] = include_bytes!("../../font.bin");
 
-#[derive(Clone)]
+pub unsafe fn assume_init_screen(options: shared::FrameBufferOptions) {
+    SCREEN
+        .lock()
+        .replace(unsafe { Screen::from_options(options) });
+}
+
 pub struct Screen {
-    options: OnceCell<shared::FrameBufferOptions>,
-}
-unsafe impl Sync for Screen {
-    // 基本的にunsafeの根源はFrameBufferOptions.frame_buffer (*mut u8)である
-}
-impl AsRef<shared::FrameBufferOptions> for Screen {
-    fn as_ref(&self) -> &shared::FrameBufferOptions {
-        // 最初の最初にちゃんと初期化しておけば基本的に安全
-        unsafe { self.options.get().unwrap_unchecked() }
-    }
+    buffer: &'static mut [u8],
+    width: u32,
+    height: u32,
+    pixels_per_scanline: u32,
+    pixel_format: shared::PixelFormat,
 }
 impl Screen {
-    pub const fn new() -> Self {
+    pub unsafe fn from_options(options: shared::FrameBufferOptions) -> Self {
         Self {
-            options: OnceCell::new(),
+            buffer: unsafe {
+                core::slice::from_raw_parts_mut(options.frame_buffer, options.frame_buffer_size)
+            },
+            width: options.horizontal_resolution,
+            height: options.vertical_resolution,
+            pixels_per_scanline: options.pixels_per_scanline,
+            pixel_format: options.pixel_format,
         }
-    }
-    pub fn init(&self, options: shared::FrameBufferOptions) {
-        self.options
-            .set(options)
-            .map_err(|_| ())
-            .expect("attempt double init screen");
     }
     pub fn width(&self) -> u32 {
-        self.as_ref().horizontal_resolution
+        self.width
     }
     pub fn height(&self) -> u32 {
-        self.as_ref().vertical_resolution
+        self.height
     }
-    pub fn pixels_per_scanline(&self) -> u32 {
-        self.as_ref().pixels_per_scanline
-    }
-    pub fn format(&self) -> shared::PixelFormat {
-        self.as_ref().pixel_format
-    }
-    pub fn draw_pixel(&self, x: u32, y: u32, color: Color) {
-        if x >= self.width() {
+    pub fn draw_pixel(&mut self, x: u32, y: u32, color: Color) {
+        if x >= self.width {
             return;
         }
-        if y >= self.width() {
+        if y >= self.height {
             return;
         }
-        let index = ((self.pixels_per_scanline() * y + x) * 4) as usize;
-        let color = color.to_u32(&self.format());
-        unsafe {
-            core::ptr::write_unaligned(self.as_ref().frame_buffer.add(index) as *mut u32, color)
-        };
+        let index = ((self.pixels_per_scanline * y + x) * 4) as usize;
+        let color = color.to_arr(&self.pixel_format);
+        self.buffer[index] = color[0];
+        self.buffer[index + 1] = color[1];
+        self.buffer[index + 2] = color[2];
+        self.buffer[index + 3] = color[3];
     }
-    pub fn draw_rect(&self, x: u32, y: u32, width: u32, height: u32, color: Color) {
+    pub fn draw_rect(&mut self, x: u32, y: u32, width: u32, height: u32, color: Color) {
         for xi in x..(x + width) {
             for yi in y..(y + height) {
                 self.draw_pixel(xi, yi, color);
             }
         }
     }
-    pub fn draw_ascii(&self, x: u32, y: u32, color: Color, c: char) {
+    pub fn draw_ascii(&mut self, x: u32, y: u32, color: Color, c: char) {
         if c.is_ascii() {
             let idx = (c as usize) * 16;
             for (yi, line) in FONT[idx..(idx + 16)].iter().enumerate() {
@@ -97,7 +90,7 @@ impl Screen {
             }
         }
     }
-    pub fn str_writer(&self, x: u32, y: u32, color: Color) -> ScrWriter<'_> {
+    pub fn str_writer(&mut self, x: u32, y: u32, color: Color) -> ScrWriter<'_> {
         ScrWriter {
             screen: self,
             x,
@@ -109,7 +102,7 @@ impl Screen {
 }
 
 pub struct ScrWriter<'a> {
-    screen: &'a Screen,
+    screen: &'a mut Screen,
     x: u32,
     xi: u32,
     yi: u32,

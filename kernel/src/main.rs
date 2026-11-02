@@ -1,7 +1,10 @@
 #![no_main]
 #![no_std]
 
-use crate::{pci::scan_all_bus, screen::SCREEN};
+use crate::{
+    pci::scan_all_bus,
+    screen::{Color, SCREEN},
+};
 use core::fmt::Write;
 
 mod asm;
@@ -25,15 +28,18 @@ pub extern "sysv64" fn kernel_entry(options: *const shared::KernelEntrypointOpti
         table,
         ..
     } = unsafe { options.read() };
-    SCREEN.init(frame_buffer);
 
     unsafe {
+        screen::assume_init_screen(frame_buffer);
         uefi::boot::set_image_handle(image);
         uefi::table::set_system_table(table.as_ptr());
     }
 
-    SCREEN.draw_rect(0, 0, SCREEN.width(), SCREEN.height(), screen::Color::WHITE);
-    let mut writer = SCREEN.str_writer(100, 100, screen::Color::BLACK);
+    let mut screen_lock = SCREEN.lock();
+    let screen = screen_lock.as_mut().unwrap();
+
+    screen.draw_rect(0, 0, screen.width(), screen.height(), Color::WHITE);
+    let mut writer = screen.str_writer(100, 100, Color::BLACK);
     writer.write_str("Hello, World!\n").unwrap();
 
     let devices = scan_all_bus().unwrap();
@@ -47,11 +53,15 @@ pub extern "sysv64" fn kernel_entry(options: *const shared::KernelEntrypointOpti
 
 #[panic_handler]
 fn on_panic(info: &core::panic::PanicInfo) -> ! {
-    SCREEN.draw_rect(0, 0, SCREEN.width(), SCREEN.height(), screen::Color::BLUE);
+    SCREEN.try_lock().map(|mut lock| {
+        lock.as_mut().map(|screen| {
+            screen.draw_rect(0, 0, screen.width(), screen.height(), screen::Color::BLUE);
 
-    let _ = SCREEN
-        .str_writer(50, 50, screen::Color::WHITE)
-        .write_fmt(format_args!(":(\ntntos2 {info}"));
+            let _ = screen
+                .str_writer(50, 50, Color::WHITE)
+                .write_fmt(format_args!(":(\ntntos2 {info}"));
+        })
+    });
 
     halt()
 }
