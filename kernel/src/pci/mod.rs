@@ -3,10 +3,10 @@ mod scan;
 
 use core::ops::ControlFlow;
 
-use crate::{pci::device::Device, utils::vecarr::VecArr};
+use crate::utils::vecarr::VecArr;
 
+pub use device::Device;
 pub static DEVICES: spin::Once<VecArr<Device, 32>> = spin::Once::new();
-
 pub fn init_pci() {
     DEVICES.try_call_once::<_, core::convert::Infallible>(|| {
         let mut devices = VecArr::new(|_| Device::new(0, 0, 0));

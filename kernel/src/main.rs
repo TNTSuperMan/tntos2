@@ -11,6 +11,7 @@ mod asm;
 mod pci;
 mod screen;
 mod utils;
+mod xhc;
 
 fn halt() -> ! {
     loop {

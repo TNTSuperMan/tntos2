@@ -106,4 +106,21 @@ impl Device {
     pub fn is_single_func(&self) -> bool {
         self.header_type() & 0x80 == 0
     }
+    pub fn bar(&self, bar_index: u8) -> Option<u64> {
+        if bar_index >= 6 {
+            return None;
+        }
+
+        let bar_lo = self.read(0x10 + 4 * bar_index);
+
+        if (bar_lo & 4) == 0 {
+            Some(bar_lo as u64)
+        } else {
+            if bar_index >= 5 {
+                return None;
+            }
+            let bar_hi = self.read(0x10 + 4 * (bar_index + 1));
+            Some(bar_lo as u64 | ((bar_hi as u64) << 32))
+        }
+    }
 }
