@@ -2,12 +2,14 @@
 #![no_std]
 
 use crate::{
+    interrupt::init_interrupt,
     pci::{DEVICES, init_pci},
     screen::{Color, SCREEN},
 };
 use core::fmt::Write;
 
 mod asm;
+mod interrupt;
 mod pci;
 mod screen;
 mod utils;
@@ -37,6 +39,7 @@ pub extern "sysv64" fn kernel_entry(options: *const shared::KernelEntrypointOpti
     }
 
     init_pci();
+    init_interrupt();
 
     let mut screen_lock = SCREEN.lock();
     let screen = screen_lock.as_mut().unwrap();
