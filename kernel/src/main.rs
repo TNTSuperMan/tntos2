@@ -10,6 +10,7 @@ use crate::{
 use core::fmt::Write;
 
 mod asm;
+mod console;
 mod interrupt;
 mod panic;
 mod pci;
@@ -54,24 +55,20 @@ extern "sysv64" fn main() -> ! {
     init_pci();
     init_interrupt();
 
-    let mut screen = SCREEN.lock();
-    let width = screen.width();
-    let height = screen.height();
+    {
+        let mut screen = SCREEN.lock();
+        let width = screen.width();
+        let height = screen.height();
 
-    screen.draw_rect(0, 0, width, height, Color::WHITE);
-    let mut writer = screen.str_writer(100, 100, Color::BLACK);
-    writer.write_str("Hello, World!\n").unwrap();
-
-    for device in DEVICES.get().unwrap().iter() {
-        writer.write_fmt(format_args!("{device:?}\n")).unwrap();
+        screen.draw_rect(0, 0, width, height, Color::WHITE);
     }
 
-    writer
-        .write_fmt(format_args!(
-            "Stack position: {:X}",
-            core::ptr::addr_of!(writer).addr()
-        ))
-        .unwrap();
+    for device in DEVICES.get().unwrap().iter() {
+        println!("{device:?}");
+    }
+    let mut stack_tmp = [0];
+    stack_tmp[core::hint::black_box(0)] = core::hint::black_box(0);
+    println!("Stack position: {:X}", stack_tmp.as_ptr().addr());
 
     stop();
 }
