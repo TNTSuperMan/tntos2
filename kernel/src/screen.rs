@@ -22,14 +22,12 @@ impl Color {
     }
 }
 
-pub static SCREEN: spin::Mutex<Option<Screen>> = spin::Mutex::new(None);
+pub static SCREEN: spin::Mutex<Screen> = spin::Mutex::new(Screen::uninit());
 
 static FONT: &'static [u8; 16 * 128] = include_bytes!("../../font.bin");
 
 pub unsafe fn assume_init_screen(options: shared::FrameBufferOptions) {
-    SCREEN
-        .lock()
-        .replace(unsafe { Screen::from_options(options) });
+    *SCREEN.lock() = unsafe { Screen::from_options(options) };
 }
 
 pub struct Screen {
@@ -40,6 +38,20 @@ pub struct Screen {
     pixel_format: shared::PixelFormat,
 }
 impl Screen {
+    pub const fn uninit() -> Self {
+        Self {
+            buffer: unsafe {
+                // 長さは0である
+                // 空のVecのポインタがダングリングであるように、
+                // 長さ0のスライスは論理的に全てが領域外でありアクセスは発生しないため安全である
+                core::slice::from_raw_parts_mut(core::ptr::dangling_mut(), 0)
+            },
+            width: 0,
+            height: 0,
+            pixels_per_scanline: 0,
+            pixel_format: shared::PixelFormat::Rgb,
+        }
+    }
     pub unsafe fn from_options(options: shared::FrameBufferOptions) -> Self {
         Self {
             buffer: unsafe {

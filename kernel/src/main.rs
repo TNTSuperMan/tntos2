@@ -54,10 +54,11 @@ extern "sysv64" fn main() -> ! {
     init_pci();
     init_interrupt();
 
-    let mut screen_lock = SCREEN.lock();
-    let screen = screen_lock.as_mut().unwrap();
+    let mut screen = SCREEN.lock();
+    let width = screen.width();
+    let height = screen.height();
 
-    screen.draw_rect(0, 0, screen.width(), screen.height(), Color::WHITE);
+    screen.draw_rect(0, 0, width, height, Color::WHITE);
     let mut writer = screen.str_writer(100, 100, Color::BLACK);
     writer.write_str("Hello, World!\n").unwrap();
 
