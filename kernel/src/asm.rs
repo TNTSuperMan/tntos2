@@ -1,3 +1,11 @@
+pub fn stop() -> ! {
+    loop {
+        unsafe {
+            core::arch::asm!("hlt");
+        }
+    }
+}
+
 pub fn io_out(addr: u16, data: u32) {
     unsafe {
         core::arch::asm!(

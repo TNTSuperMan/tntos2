@@ -2,6 +2,7 @@
 #![no_std]
 
 use crate::{
+    asm::stop,
     interrupt::init_interrupt,
     pci::{DEVICES, init_pci},
     screen::{Color, SCREEN},
@@ -10,21 +11,24 @@ use core::fmt::Write;
 
 mod asm;
 mod interrupt;
+mod panic;
 mod pci;
 mod screen;
 mod utils;
 mod xhc;
 
-fn halt() -> ! {
-    loop {
-        unsafe {
-            core::arch::asm!("hlt");
-        }
-    }
-}
+core::arch::global_asm!(
+    "
+.text
+
+.global _start
+_start:
+    call rust_main
+    "
+);
 
 #[unsafe(no_mangle)]
-pub extern "sysv64" fn kernel_entry(options: *const shared::KernelEntrypointOptions) -> ! {
+extern "sysv64" fn rust_main(options: *const shared::KernelEntrypointOptions) -> ! {
     let shared::KernelEntrypointOptions {
         frame_buffer,
         image,
@@ -52,20 +56,12 @@ pub extern "sysv64" fn kernel_entry(options: *const shared::KernelEntrypointOpti
         writer.write_fmt(format_args!("{device:?}\n")).unwrap();
     }
 
-    halt();
-}
+    writer
+        .write_fmt(format_args!(
+            "Stack position: {:X}",
+            core::ptr::addr_of!(writer).addr()
+        ))
+        .unwrap();
 
-#[panic_handler]
-fn on_panic(info: &core::panic::PanicInfo) -> ! {
-    SCREEN.try_lock().map(|mut lock| {
-        lock.as_mut().map(|screen| {
-            screen.draw_rect(0, 0, screen.width(), screen.height(), screen::Color::BLUE);
-
-            let _ = screen
-                .str_writer(50, 50, Color::WHITE)
-                .write_fmt(format_args!(":(\ntntos2 {info}"));
-        })
-    });
-
-    halt()
+    stop();
 }
