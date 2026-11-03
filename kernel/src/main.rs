@@ -17,18 +17,13 @@ mod screen;
 mod utils;
 mod xhc;
 
-core::arch::global_asm!(
-    "
-.text
-
-.global _start
-_start:
-    call rust_main
-    "
-);
+// mainに直接置いてるとキモいので然るべきときが来たら別の場所に移動してください
+#[repr(align(16))]
+struct Stack([u8; 1048576]);
+static mut KERNEL_STACK: Stack = Stack([0; 1048576]);
 
 #[unsafe(no_mangle)]
-extern "sysv64" fn rust_main(options: *const shared::KernelEntrypointOptions) -> ! {
+extern "sysv64" fn _start(options: *const shared::KernelEntrypointOptions) -> ! {
     let shared::KernelEntrypointOptions {
         frame_buffer,
         image,
@@ -42,6 +37,20 @@ extern "sysv64" fn rust_main(options: *const shared::KernelEntrypointOptions) ->
         uefi::table::set_system_table(table.as_ptr());
     }
 
+    let stack_pointer = unsafe { core::ptr::addr_of!(KERNEL_STACK.0) }.addr() + size_of::<Stack>();
+
+    unsafe {
+        core::arch::asm!(
+            "mov rsp, {0}
+            call main",
+            in(reg) stack_pointer
+        );
+        core::hint::unreachable_unchecked();
+    }
+}
+
+#[unsafe(no_mangle)]
+extern "sysv64" fn main() -> ! {
     init_pci();
     init_interrupt();
 
