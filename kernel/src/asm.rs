@@ -40,11 +40,10 @@ pub fn load_idt(limit: u16, offset: u64) {
     {
         *o = i;
     }
-    let addr = data.as_ptr().addr();
     unsafe {
         core::arch::asm!(
             "lidt [rax]",
-            in("rax") addr,
+            in("rax") data.as_ptr(),
         );
     }
 }
