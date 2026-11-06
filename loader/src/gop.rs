@@ -26,9 +26,15 @@ pub fn into_frame_buffer_options(
 ) -> shared::FrameBufferOptions {
     let mut gop = core::mem::ManuallyDrop::new(gop);
     let gop = gop.get_mut().unwrap();
+    if gop.current_mode_info().stride() * gop.current_mode_info().resolution().1 * 4
+        > gop.frame_buffer().size()
+    {
+        panic!(
+            "assert failed: pixels_per_scanline * vertical resolution * 4 must lesser or equal than frame buffer size"
+        );
+    }
     shared::FrameBufferOptions {
         frame_buffer: gop.frame_buffer().as_mut_ptr(),
-        frame_buffer_size: gop.frame_buffer().size(),
         horizontal_resolution: gop.current_mode_info().resolution().0 as u32,
         vertical_resolution: gop.current_mode_info().resolution().1 as u32,
         pixels_per_scanline: gop.current_mode_info().stride() as u32,

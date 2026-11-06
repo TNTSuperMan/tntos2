@@ -35,7 +35,6 @@ table: #{:>016X}",
 #[repr(C)]
 pub struct FrameBufferOptions {
     pub frame_buffer: *mut u8,
-    pub frame_buffer_size: usize,
     pub horizontal_resolution: u32,
     pub vertical_resolution: u32,
     pub pixels_per_scanline: u32,

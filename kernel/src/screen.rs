@@ -31,21 +31,19 @@ pub unsafe fn assume_init_screen(options: shared::FrameBufferOptions) {
 }
 
 pub struct Screen {
-    buffer: &'static mut [u8],
+    buffer: *mut u8,
     width: u32,
     height: u32,
     pixels_per_scanline: u32,
     pixel_format: shared::PixelFormat,
 }
+unsafe impl Send for Screen {
+    // SAFETY: 生ポインタbufferは基本的に永続的に生存し、どのCPUコアから操作しても同じであるため基本的に安全
+}
 impl Screen {
     pub const fn uninit() -> Self {
         Self {
-            buffer: unsafe {
-                // 長さは0である
-                // 空のVecのポインタがダングリングであるように、
-                // 長さ0のスライスは論理的に全てが領域外でありアクセスは発生しないため安全である
-                core::slice::from_raw_parts_mut(core::ptr::dangling_mut(), 0)
-            },
+            buffer: core::ptr::dangling_mut(),
             width: 0,
             height: 0,
             pixels_per_scanline: 0,
@@ -54,9 +52,7 @@ impl Screen {
     }
     pub unsafe fn from_options(options: shared::FrameBufferOptions) -> Self {
         Self {
-            buffer: unsafe {
-                core::slice::from_raw_parts_mut(options.frame_buffer, options.frame_buffer_size)
-            },
+            buffer: options.frame_buffer,
             width: options.horizontal_resolution,
             height: options.vertical_resolution,
             pixels_per_scanline: options.pixels_per_scanline,
@@ -78,10 +74,15 @@ impl Screen {
         }
         let index = ((self.pixels_per_scanline * y + x) * 4) as usize;
         let color = color.to_arr(&self.pixel_format);
-        self.buffer[index] = color[0];
-        self.buffer[index + 1] = color[1];
-        self.buffer[index + 2] = color[2];
-        self.buffer[index + 3] = color[3];
+
+        // SAFETY: pixels_per_scanline * vertical_resolution * 4 <= frame_buffer_length はローダーが保証する
+        // 先程xとyが範囲内にあることを確認したため安全だと思われる
+        let b = unsafe { self.buffer.add(index) };
+        for (i, c) in color.into_iter().enumerate() {
+            unsafe {
+                b.add(i).write_volatile(c);
+            }
+        }
     }
     pub fn draw_rect(&mut self, x: u32, y: u32, width: u32, height: u32, color: Color) {
         for xi in x..(x + width) {
