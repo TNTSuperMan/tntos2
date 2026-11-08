@@ -6,6 +6,7 @@ use crate::{
     interrupt::init_interrupt,
     pci::{DEVICES, init_pci},
     screen::{Color, SCREEN},
+    xhc::init_xhc,
 };
 use core::fmt::Write;
 
@@ -53,6 +54,7 @@ extern "sysv64" fn _start(options: *const shared::KernelEntrypointOptions) -> ! 
 #[unsafe(no_mangle)]
 extern "sysv64" fn main() -> ! {
     init_pci();
+    init_xhc();
     init_interrupt();
 
     {
