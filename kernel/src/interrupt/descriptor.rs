@@ -1,10 +1,8 @@
 use spin::Mutex;
 
-use crate::asm::load_idt;
-
 #[repr(packed)]
 #[derive(Clone, Copy)]
-struct Descriptor {
+pub struct Descriptor {
     offset_low: u16,
     segment_selector: u16,
     attribute: u16,
@@ -35,10 +33,22 @@ impl Descriptor {
     }
 }
 
-static IDT: Mutex<[Descriptor; 256]> = Mutex::new([Descriptor::zeroed(); 256]);
-
-pub fn init_interrupt() {
-    let size = size_of::<[Descriptor; 256]>();
-    let ptr = IDT.lock().as_ptr();
-    load_idt(size as u16, ptr.addr() as u64);
+#[repr(u8)]
+pub enum DescriptorType {
+    UpperuBytes = 0,
+    LDT = 2,
+    TSSAvailable = 9,
+    TSSBusy = 11,
+    CallGate = 12,
+    InterruptGate = 14,
+    TrapGate = 15,
 }
+
+pub fn make_attr(typ: DescriptorType, privilege_lv: u8, present: bool, ist: u8) -> u16 {
+    ist as u16
+        | (typ as u8 as u16) << 8
+        | (privilege_lv as u16) << 12
+        | if present { 0b1000000000000000 } else { 0 }
+}
+
+pub static IDT: Mutex<[Descriptor; 256]> = Mutex::new([Descriptor::zeroed(); 256]);

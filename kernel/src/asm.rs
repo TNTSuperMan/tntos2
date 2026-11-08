@@ -28,6 +28,17 @@ pub fn io_in(addr: u16) -> u32 {
     data
 }
 
+pub fn get_cs() -> u16 {
+    let mut data: u16 = 0;
+    unsafe {
+        core::arch::asm!(
+            "mov ax, cs",
+            out("ax") data,
+        );
+    }
+    data
+}
+
 pub fn load_idt(limit: u16, offset: u64) {
     let mut data = [0u8; 10];
     for (i, o) in limit.to_le_bytes().into_iter().zip(data.iter_mut()) {
