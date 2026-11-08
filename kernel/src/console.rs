@@ -66,7 +66,7 @@ impl<'lock> fmt::Write for ConsoleLock<'lock> {
 #[macro_export]
 macro_rules! print {
     ($($args:tt)*) => {{
-        $crate::console::ConsoleLock::lock().write_fmt(format_args!($($args)*)).unwrap();
+        <$crate::console::ConsoleLock as core::fmt::Write>::write_fmt(&mut $crate::console::ConsoleLock::lock(), format_args!($($args)*)).unwrap();
     }};
 }
 #[macro_export]
@@ -76,7 +76,7 @@ macro_rules! println {
     }};
     ($($args:tt)*) => {{
         let mut lock = $crate::console::ConsoleLock::lock();
-        lock.write_fmt(format_args!($($args)*)).unwrap();
+        <$crate::console::ConsoleLock as core::fmt::Write>::write_fmt(&mut lock, format_args!($($args)*)).unwrap();
         lock.next_line();
     }};
 }
