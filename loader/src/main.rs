@@ -60,7 +60,7 @@ fn main() -> Result<core::convert::Infallible, &'static str> {
         let _ = boot::exit_boot_services(None);
     }
 
-    Ok(entry(options))
+    entry(options)
 }
 
 #[uefi::entry]
