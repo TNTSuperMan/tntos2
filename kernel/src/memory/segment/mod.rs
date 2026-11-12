@@ -1,6 +1,6 @@
 use crate::{
     asm::{LgdtField, load_gdt},
-    segment::descriptor::{DescriptorType, SegmentDescriptor},
+    memory::segment::descriptor::{DescriptorType, SegmentDescriptor},
 };
 
 mod descriptor;

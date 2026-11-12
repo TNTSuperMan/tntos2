@@ -3,10 +3,9 @@
 #![feature(abi_x86_interrupt)]
 
 use crate::{
-    interrupt::init_interrupt,
-    pci::{DEVICES, init_pci},
+    pci::DEVICES,
     screen::{Color, SCREEN},
-    xhc::{init_xhc, poll_xhc},
+    xhc::poll_xhc,
 };
 
 mod asm;
@@ -16,7 +15,6 @@ mod memory;
 mod panic;
 mod pci;
 mod screen;
-mod segment;
 mod utils;
 pub mod xhc;
 
@@ -39,7 +37,7 @@ extern "sysv64" fn _start(options: *const shared::KernelEntrypointOptions) -> ! 
         screen::assume_init_screen(frame_buffer);
         uefi::boot::set_image_handle(image);
         uefi::table::set_system_table(table.as_ptr());
-        memory::init(memory_map);
+        memory::uefi_mmap::init(memory_map);
     }
 
     {
@@ -64,10 +62,10 @@ extern "sysv64" fn _start(options: *const shared::KernelEntrypointOptions) -> ! 
 
 #[unsafe(no_mangle)]
 extern "sysv64" fn main() -> ! {
-    init_pci();
-    init_xhc();
-    init_interrupt();
-    segment::init();
+    pci::init();
+    xhc::init();
+    interrupt::init();
+    memory::segment::init();
 
     for device in DEVICES.get().unwrap().iter() {
         println!("{device:?}");

@@ -5,7 +5,7 @@ use crate::{
 
 mod descriptor;
 
-pub fn init_interrupt() {
+pub fn init() {
     let mut idt = IDT.lock();
 
     // PF

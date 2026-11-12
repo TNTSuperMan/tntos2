@@ -78,7 +78,7 @@ fn switch_ehci_xhci(xhc_device: &Device) {
     }
 }
 
-pub fn init_xhc() {
+pub fn init() {
     let Some(xhc_device) = DEVICES.get().unwrap().iter().find(|device| {
         let class = device.class_code();
         class.base() == 0x0C && class.sub() == 0x03 && class.interface() == 0x30
