@@ -1,3 +1,4 @@
+mod manager;
 mod paging;
 mod segment;
 pub mod uefi_mmap;
