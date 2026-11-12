@@ -1,6 +1,6 @@
 use spin::Mutex;
 
-#[repr(packed)]
+#[repr(C, packed)]
 #[derive(Clone, Copy)]
 pub struct Descriptor {
     offset_low: u16,
