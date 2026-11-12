@@ -12,6 +12,7 @@ use crate::{
 mod asm;
 mod console;
 mod interrupt;
+mod memory;
 mod panic;
 mod pci;
 mod screen;
@@ -27,6 +28,7 @@ static mut KERNEL_STACK: Stack = Stack([0; 1048576]);
 extern "sysv64" fn _start(options: *const shared::KernelEntrypointOptions) -> ! {
     let shared::KernelEntrypointOptions {
         frame_buffer,
+        memory_map,
         image,
         table,
         ..
@@ -36,6 +38,7 @@ extern "sysv64" fn _start(options: *const shared::KernelEntrypointOptions) -> ! 
         screen::assume_init_screen(frame_buffer);
         uefi::boot::set_image_handle(image);
         uefi::table::set_system_table(table.as_ptr());
+        memory::init(memory_map);
     }
 
     {
