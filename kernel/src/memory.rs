@@ -1,4 +1,7 @@
-use uefi::mem::memory_map::{MemoryMapMeta, MemoryMapRef};
+use uefi::{
+    boot::MemoryType,
+    mem::memory_map::{MemoryMapMeta, MemoryMapRef},
+};
 
 pub static MEMORY_MAP: spin::Once<MemoryMapRef<'static>> = spin::Once::new();
 
@@ -16,4 +19,13 @@ pub unsafe fn init(memmap: shared::MemoryMap) {
         )
         .expect("corrupt memorymap received from loader")
     });
+}
+
+pub fn is_available(typ: MemoryType) -> bool {
+    match typ {
+        MemoryType::BOOT_SERVICES_CODE
+        | MemoryType::BOOT_SERVICES_DATA
+        | MemoryType::CONVENTIONAL => true,
+        _ => false,
+    }
 }
