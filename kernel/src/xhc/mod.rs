@@ -1,7 +1,67 @@
 use crate::pci::{DEVICES, Device};
 
 mod control;
-mod registers;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InputEvent {
+    Key {
+        usage: u8,
+        pressed: bool,
+        character: Option<char>,
+        modifiers: u8,
+    },
+    Mouse {
+        buttons: u8,
+        dx: i8,
+        dy: i8,
+    },
+}
+
+struct InputQueue {
+    events: [Option<InputEvent>; 128],
+    head: usize,
+    length: usize,
+}
+
+impl InputQueue {
+    const fn new() -> Self {
+        Self {
+            events: [None; 128],
+            head: 0,
+            length: 0,
+        }
+    }
+
+    fn push(&mut self, event: InputEvent) {
+        if self.length == self.events.len() {
+            self.head = (self.head + 1) % self.events.len();
+            self.length -= 1;
+        }
+        let tail = (self.head + self.length) % self.events.len();
+        self.events[tail] = Some(event);
+        self.length += 1;
+    }
+
+    fn pop(&mut self) -> Option<InputEvent> {
+        if self.length == 0 {
+            return None;
+        }
+        let event = self.events[self.head].take();
+        self.head = (self.head + 1) % self.events.len();
+        self.length -= 1;
+        event
+    }
+}
+
+static INPUT_EVENTS: spin::Mutex<InputQueue> = spin::Mutex::new(InputQueue::new());
+
+fn push_input(event: InputEvent) {
+    INPUT_EVENTS.lock().push(event);
+}
+
+pub fn try_read_input() -> Option<InputEvent> {
+    INPUT_EVENTS.lock().pop()
+}
 
 fn switch_ehci_xhci(xhc_device: &Device) {
     if DEVICES.get().unwrap().iter().any(|device| {
@@ -23,14 +83,36 @@ pub fn init_xhc() {
         let class = device.class_code();
         class.base() == 0x0C && class.sub() == 0x03 && class.interface() == 0x30
     }) else {
+        crate::println!("xHCI controller not found");
         return;
     };
 
-    let xhc_mmio_base = xhc_device.bar(0).unwrap() & !0xF; // この場合インデックスが5未満なのでunwrapパニックは起こり得ない
+    let Some(bar) = xhc_device.bar(0) else {
+        crate::println!("xHCI controller has no BAR0");
+        return;
+    };
+    if bar & 1 != 0 {
+        crate::println!("xHCI BAR0 is not a memory BAR");
+        return;
+    }
+    let xhc_mmio_base = bar & !0xF;
+    if xhc_mmio_base == 0 {
+        crate::println!("xHCI BAR0 is unassigned");
+        return;
+    }
+
+    let command_status = xhc_device.read(0x04);
+    xhc_device.write(0x04, (command_status as u16 | 0x0006) as u32);
 
     if xhc_device.vendor_id() == 0x8086 {
         switch_ehci_xhci(&xhc_device);
     }
 
-    let xhci = unsafe { control::Controller::new(xhc_mmio_base) };
+    if let Err(error) = unsafe { control::init(xhc_mmio_base) } {
+        crate::println!("xHCI initialization failed: {error}");
+    }
+}
+
+pub fn poll_xhc() {
+    control::poll();
 }

@@ -3,11 +3,10 @@
 #![feature(abi_x86_interrupt)]
 
 use crate::{
-    asm::stop,
     interrupt::init_interrupt,
     pci::{DEVICES, init_pci},
     screen::{Color, SCREEN},
-    xhc::init_xhc,
+    xhc::{init_xhc, poll_xhc},
 };
 
 mod asm;
@@ -17,7 +16,7 @@ mod panic;
 mod pci;
 mod screen;
 mod utils;
-mod xhc;
+pub mod xhc;
 
 // mainに直接置いてるとキモいので然るべきときが来たら別の場所に移動してください
 #[repr(align(16))]
@@ -69,5 +68,8 @@ extern "sysv64" fn main() -> ! {
         println!("{device:?}");
     }
 
-    stop();
+    loop {
+        poll_xhc();
+        core::hint::spin_loop();
+    }
 }
