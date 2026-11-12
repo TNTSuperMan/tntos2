@@ -1,5 +1,8 @@
 use crate::pci::{DEVICES, Device};
 
+mod control;
+mod registers;
+
 fn switch_ehci_xhci(xhc_device: &Device) {
     if DEVICES.get().unwrap().iter().any(|device| {
         // check intel EHC
@@ -28,4 +31,6 @@ pub fn init_xhc() {
     if xhc_device.vendor_id() == 0x8086 {
         switch_ehci_xhci(&xhc_device);
     }
+
+    let xhci = unsafe { control::Controller::new(xhc_mmio_base) };
 }
