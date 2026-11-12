@@ -11,7 +11,7 @@ pub fn init_interrupt() {
     // PF
     idt[14] = Descriptor::new(
         make_attr(DescriptorType::InterruptGate, 0, true, 0),
-        int_handle::<14> as u64,
+        (int_handle::<14> as *const ()).addr() as u64,
         get_cs(),
     );
 

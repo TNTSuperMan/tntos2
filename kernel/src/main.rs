@@ -9,7 +9,6 @@ use crate::{
     screen::{Color, SCREEN},
     xhc::init_xhc,
 };
-use core::fmt::Write;
 
 mod asm;
 mod console;
