@@ -32,9 +32,12 @@ fn main() -> Result<core::convert::Infallible, &'static str> {
     let entry = kernel::load_kernel(&mut rootdir)?;
     debug!("kernel loaded");
 
+    /*
     info!("loading volume...");
     let volume_image = blockio::read_volume().map_err(|_| "failed to read volume")?;
     info!("volume loaded");
+    */
+    let volume_image = [];
 
     let options = shared::KernelEntrypointOptions {
         frame_buffer: into_frame_buffer_options(gop),
