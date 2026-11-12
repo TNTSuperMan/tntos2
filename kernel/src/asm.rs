@@ -86,3 +86,12 @@ pub fn set_ds_all(value: u16) {
 pub fn set_csss(cs: u16, ss: u16) {
     todo!()
 }
+
+pub fn set_cr3(value: u64) {
+    unsafe {
+        core::arch::asm!(
+            "mov cr3, {}",
+            in(reg) value,
+        );
+    }
+}

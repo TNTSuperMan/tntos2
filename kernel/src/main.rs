@@ -65,7 +65,7 @@ extern "sysv64" fn main() -> ! {
     pci::init();
     xhc::init();
     interrupt::init();
-    memory::segment::init();
+    memory::init();
 
     for device in DEVICES.get().unwrap().iter() {
         println!("{device:?}");
