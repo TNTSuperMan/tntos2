@@ -54,3 +54,35 @@ pub fn load_idt(field: &LidtField) {
         );
     }
 }
+
+#[repr(C, packed)]
+pub struct LgdtField {
+    pub limit: u16,
+    pub offset: u64,
+}
+pub fn load_gdt(field: &LgdtField) {
+    let addr = core::ptr::addr_of!(*field);
+
+    unsafe {
+        core::arch::asm!(
+            "lgdt [rax]",
+            in("rax") addr,
+        );
+    }
+}
+
+pub fn set_ds_all(value: u16) {
+    unsafe {
+        core::arch::asm!(
+            "mov ds, di
+            mov es, di
+            mov fs, di
+            mov gs, di",
+            in("di") value,
+        );
+    }
+}
+
+pub fn set_csss(cs: u16, ss: u16) {
+    todo!()
+}

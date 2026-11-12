@@ -16,6 +16,7 @@ mod memory;
 mod panic;
 mod pci;
 mod screen;
+mod segment;
 mod utils;
 pub mod xhc;
 
@@ -66,6 +67,7 @@ extern "sysv64" fn main() -> ! {
     init_pci();
     init_xhc();
     init_interrupt();
+    segment::init();
 
     for device in DEVICES.get().unwrap().iter() {
         println!("{device:?}");
