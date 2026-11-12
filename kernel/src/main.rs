@@ -39,6 +39,14 @@ extern "sysv64" fn _start(options: *const shared::KernelEntrypointOptions) -> ! 
         uefi::table::set_system_table(table.as_ptr());
     }
 
+    {
+        let mut screen = SCREEN.lock();
+        let width = screen.width();
+        let height = screen.height();
+
+        screen.draw_rect(0, 0, width, height, Color::WHITE);
+    }
+
     let stack_pointer = unsafe { core::ptr::addr_of!(KERNEL_STACK.0) }.addr() + size_of::<Stack>();
 
     unsafe {
@@ -57,20 +65,9 @@ extern "sysv64" fn main() -> ! {
     init_xhc();
     init_interrupt();
 
-    {
-        let mut screen = SCREEN.lock();
-        let width = screen.width();
-        let height = screen.height();
-
-        screen.draw_rect(0, 0, width, height, Color::WHITE);
-    }
-
     for device in DEVICES.get().unwrap().iter() {
         println!("{device:?}");
     }
-    let mut stack_tmp = [0];
-    stack_tmp[core::hint::black_box(0)] = core::hint::black_box(0);
-    println!("Stack position: {:X}", stack_tmp.as_ptr().addr());
 
     stop();
 }
