@@ -1,5 +1,5 @@
 use crate::{
-    asm::{get_cs, load_idt},
+    asm::{LidtField, get_cs, load_idt},
     interrupt::descriptor::{Descriptor, DescriptorType, IDT, make_attr},
 };
 
@@ -15,10 +15,10 @@ pub fn init_interrupt() {
         get_cs(),
     );
 
-    load_idt(
-        size_of::<[Descriptor; 256]>() as u16 - 1,
-        idt.as_ptr().addr() as u64,
-    );
+    load_idt(&LidtField {
+        limit: size_of::<[Descriptor; 256]>() as u16 - 1,
+        offset: idt.as_ptr().addr() as u64,
+    });
 }
 
 #[derive(Debug)]

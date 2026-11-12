@@ -39,22 +39,18 @@ pub fn get_cs() -> u16 {
     data
 }
 
-pub fn load_idt(limit: u16, offset: u64) {
-    let mut data = [0u8; 10];
-    for (i, o) in limit.to_le_bytes().into_iter().zip(data.iter_mut()) {
-        *o = i;
-    }
-    for (i, o) in offset
-        .to_le_bytes()
-        .into_iter()
-        .zip(data.iter_mut().skip(2))
-    {
-        *o = i;
-    }
+#[repr(C, packed)]
+pub struct LidtField {
+    pub limit: u16,
+    pub offset: u64,
+}
+pub fn load_idt(field: &LidtField) {
+    let addr = core::ptr::addr_of!(*field);
+
     unsafe {
         core::arch::asm!(
             "lidt [rax]",
-            in("rax") data.as_ptr(),
+            in("rax") addr,
         );
     }
 }
