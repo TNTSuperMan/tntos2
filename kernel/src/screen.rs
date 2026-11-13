@@ -65,6 +65,9 @@ impl Screen {
     pub fn height(&self) -> u32 {
         self.height
     }
+    pub fn format(&self) -> shared::PixelFormat {
+        self.pixel_format
+    }
     pub fn draw_pixel(&mut self, x: u32, y: u32, color: Color) {
         if x >= self.width {
             return;

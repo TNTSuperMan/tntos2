@@ -70,6 +70,13 @@ extern "sysv64" fn main() -> ! {
     interrupt::init();
     memory::init();
 
+    let (width, height, format) = {
+        let screen = SCREEN.lock();
+        (screen.width(), screen.height(), screen.format())
+    };
+
+    println!("screen: {width}x{height} {format:?}");
+
     for device in DEVICES.get().unwrap().iter() {
         println!("{device:?}");
     }
