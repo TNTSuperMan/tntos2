@@ -82,7 +82,10 @@ extern "sysv64" fn main() -> ! {
     }
 
     loop {
-        poll_xhc();
         core::hint::spin_loop();
+        poll_xhc();
+        if let Some(ev) = xhc::try_read_input() {
+            println!("{ev:?}");
+        }
     }
 }

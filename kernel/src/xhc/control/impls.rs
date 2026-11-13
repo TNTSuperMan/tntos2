@@ -682,11 +682,6 @@ impl Controller {
                             character: (character != 0).then_some(character as char),
                             modifiers: report[0],
                         });
-                        if character == 0 {
-                            crate::println!("keyboard down: usage 0x{key:02x}");
-                        } else {
-                            crate::println!("keyboard down: {}", character as char);
-                        }
                     }
                 }
                 for key in slot.keyboard_keys.iter().copied().filter(|key| *key != 0) {
@@ -697,7 +692,6 @@ impl Controller {
                             character: None,
                             modifiers: report[0],
                         });
-                        crate::println!("keyboard up: usage 0x{key:02x}");
                     }
                 }
                 keys.copy_from_slice(&report[2..8]);
@@ -709,7 +703,6 @@ impl Controller {
                 let dy = report[2] as i8;
                 if buttons != slot.mouse_buttons || dx != 0 || dy != 0 {
                     crate::xhc::push_input(crate::xhc::InputEvent::Mouse { buttons, dx, dy });
-                    crate::println!("mouse buttons={buttons:02x} dx={dx} dy={dy}");
                 }
                 self.slots[slot_index].mouse_buttons = buttons;
             }
