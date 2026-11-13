@@ -1,6 +1,6 @@
 use core::ops::Range;
 
-pub const BYTES_PER_FRAME: usize = 4096 * 512;
+pub const BYTES_PER_FRAME: usize = 4096;
 
 type Frame = [u8; BYTES_PER_FRAME];
 
@@ -46,7 +46,7 @@ impl MemoryManager {
         range: 0..0,
     };
 
-    pub const MAX_PHY_MEM_BYTES: usize = 1024 * 1024 * 1024 * 128; // 1GiB
+    pub const MAX_PHY_MEM_BYTES: usize = 1024 * 1024 * 1024 * 1; // 1GiB
     pub const FRAME_COUNT: usize = MemoryManager::MAX_PHY_MEM_BYTES / BYTES_PER_FRAME;
 
     pub fn is_allocated(&self, frame: usize) -> bool {
@@ -83,18 +83,17 @@ impl MemoryManager {
             for i in 0..len {
                 if self.is_allocated(curr_frame + i) {
                     curr_frame += i + 1;
+                    if !self.range.contains(&(curr_frame + len - 1)) {
+                        return None;
+                    }
                     continue 'mainloop;
                 }
             }
-            if self.range.contains(&(curr_frame + len - 1)) {
-                self.mark_allocated(curr_frame, len);
-                break Some(Frames {
-                    frameid: curr_frame,
-                    length: len,
-                });
-            } else {
-                break None;
-            }
+            self.mark_allocated(curr_frame, len);
+            return Some(Frames {
+                frameid: curr_frame,
+                length: len,
+            });
         }
     }
     pub fn free(&mut self, frames: Frames) -> Result<(), ()> {

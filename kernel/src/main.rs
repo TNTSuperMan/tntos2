@@ -72,15 +72,6 @@ extern "sysv64" fn main() -> ! {
         println!("{device:?}");
     }
 
-    let mgr = MEMORY_MANAGER.lock();
-    for i in 0..mgr.range.end {
-        if mgr.is_allocated(i) {
-            print!(".");
-        } else {
-            print!("_");
-        }
-    }
-
     loop {
         poll_xhc();
         core::hint::spin_loop();
