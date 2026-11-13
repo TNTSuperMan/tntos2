@@ -88,13 +88,15 @@ pub fn set_csss(cs: u16, ss: u16) {
     unsafe {
         core::arch::asm!(
             "mov ss, si
-            push {}
-            push 2f
+            lea rax, [rip + 2f]
+            push rdi
+            push rax
             retfq
             2:
             ",
-            in(reg) cs_64,
+            in("rdi") cs_64,
             in("si") ss,
+            out("rax") _,
         )
     }
 }

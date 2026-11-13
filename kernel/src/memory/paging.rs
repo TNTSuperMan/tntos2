@@ -1,6 +1,6 @@
 use crate::asm::set_cr3;
 
-const PAGE_DIR_COUNT: usize = 0;
+const PAGE_DIR_COUNT: usize = 64;
 
 const P4K: usize = 4096;
 const P2M: usize = P4K * 512;
