@@ -19,7 +19,7 @@ impl<T, const LEN: usize> VecArr<T, LEN> {
             Err(value)
         }
     }
-    pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.array.iter().take(self.length)
+    pub fn as_slice(&self) -> &[T] {
+        &self.array[..self.length]
     }
 }

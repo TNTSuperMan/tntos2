@@ -64,7 +64,7 @@ pub fn try_read_input() -> Option<InputEvent> {
 }
 
 fn switch_ehci_xhci(xhc_device: &Device) {
-    if DEVICES.get().unwrap().iter().any(|device| {
+    if DEVICES.get().unwrap().as_slice().iter().any(|device| {
         // check intel EHC
         let class = device.class_code();
         (class.base() == 0x0C && class.sub() == 0x03 && class.interface() == 0x30)
@@ -79,7 +79,7 @@ fn switch_ehci_xhci(xhc_device: &Device) {
 }
 
 pub fn init() {
-    let Some(xhc_device) = DEVICES.get().unwrap().iter().find(|device| {
+    let Some(xhc_device) = DEVICES.get().unwrap().as_slice().iter().find(|device| {
         let class = device.class_code();
         class.base() == 0x0C && class.sub() == 0x03 && class.interface() == 0x30
     }) else {

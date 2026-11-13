@@ -77,7 +77,7 @@ extern "sysv64" fn main() -> ! {
 
     println!("screen: {width}x{height} {format:?}");
 
-    for device in DEVICES.get().unwrap().iter() {
+    for device in DEVICES.get().unwrap().as_slice().iter() {
         println!("{device:?}");
     }
 
