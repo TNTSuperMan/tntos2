@@ -9,18 +9,17 @@ pub struct Frames {
     length: usize,
 }
 impl Frames {
-    pub fn as_slice(&self) -> &[Frame] {
-        unsafe {
-            core::slice::from_raw_parts(core::ptr::null::<Frame>().add(self.frameid), self.length)
-        }
+    pub fn as_ptr(&self) -> *const Frame {
+        unsafe { core::ptr::null::<Frame>().byte_add(self.frameid) }
     }
-    pub fn as_mut_slice(&mut self) -> &mut [Frame] {
-        unsafe {
-            core::slice::from_raw_parts_mut(
-                core::ptr::null_mut::<Frame>().add(self.frameid),
-                self.length,
-            )
-        }
+    pub fn as_mut_ptr(&self) -> *mut Frame {
+        unsafe { core::ptr::null_mut::<Frame>().byte_add(self.frameid) }
+    }
+    pub fn bytes_len(&self) -> usize {
+        self.length * BYTES_PER_FRAME
+    }
+    pub fn as_slice(&self) -> &[Frame] {
+        unsafe { core::slice::from_raw_parts(self.as_ptr(), self.length) }
     }
 }
 impl core::fmt::Debug for Frames {

@@ -1,9 +1,9 @@
 #![no_main]
 #![no_std]
 #![feature(abi_x86_interrupt)]
+#![feature(allocator_ext)]
 
 use crate::{
-    memory::manager::MEMORY_MANAGER,
     pci::DEVICES,
     screen::{Color, SCREEN},
     xhc::poll_xhc,

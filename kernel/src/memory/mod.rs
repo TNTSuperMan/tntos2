@@ -1,5 +1,6 @@
 use crate::asm::{set_csss, set_ds_all};
 
+mod malloc;
 pub mod manager;
 mod paging;
 mod segment;
