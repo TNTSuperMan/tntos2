@@ -10,10 +10,10 @@ pub struct Frames {
 }
 impl Frames {
     pub fn as_ptr(&self) -> *const Frame {
-        unsafe { core::ptr::null::<Frame>().byte_add(self.frameid) }
+        unsafe { core::ptr::null::<Frame>().add(self.frameid) }
     }
     pub fn as_mut_ptr(&self) -> *mut Frame {
-        unsafe { core::ptr::null_mut::<Frame>().byte_add(self.frameid) }
+        unsafe { core::ptr::null_mut::<Frame>().add(self.frameid) }
     }
     pub fn bytes_len(&self) -> usize {
         self.length * BYTES_PER_FRAME
