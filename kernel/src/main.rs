@@ -3,6 +3,8 @@
 #![feature(abi_x86_interrupt)]
 #![feature(allocator_ext)]
 
+extern crate alloc;
+
 use crate::{
     pci::DEVICES,
     screen::{Color, SCREEN},
