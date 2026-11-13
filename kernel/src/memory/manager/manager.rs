@@ -49,7 +49,7 @@ impl MemoryManager {
     pub const MAX_PHY_MEM_BYTES: usize = 1024 * 1024 * 1024 * 128; // 1GiB
     pub const FRAME_COUNT: usize = MemoryManager::MAX_PHY_MEM_BYTES / BYTES_PER_FRAME;
 
-    fn is_allocated(&self, frame: usize) -> bool {
+    pub fn is_allocated(&self, frame: usize) -> bool {
         let arr_idx = frame >> 3;
         let bit_offset = frame & 0b111;
         if let Some(line) = self.alloc_map.get(arr_idx) {

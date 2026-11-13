@@ -72,13 +72,13 @@ extern "sysv64" fn main() -> ! {
         println!("{device:?}");
     }
 
-    let mut frames = MEMORY_MANAGER.lock().allocate(1).unwrap();
-    let s = &mut frames.as_mut_slice()[0];
-    for (i, c) in s.iter_mut().enumerate() {
-        if i % 1024 * 1024 == 0 {
+    let mgr = MEMORY_MANAGER.lock();
+    for i in 0..mgr.range.end {
+        if mgr.is_allocated(i) {
             print!(".");
+        } else {
+            print!("_");
         }
-        *c = i as u8;
     }
 
     loop {
