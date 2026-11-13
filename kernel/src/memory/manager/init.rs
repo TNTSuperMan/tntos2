@@ -16,6 +16,7 @@ fn into_frame(val: u64) -> usize {
 
 pub fn init() {
     let mut memory_manager = MemoryManager::ZEROED;
+    memory_manager.range = 0..(MemoryManager::FRAME_COUNT / 8);
 
     let memory_map = MEMORY_MAP.get().unwrap();
 
