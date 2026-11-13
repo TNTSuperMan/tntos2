@@ -19,10 +19,6 @@ use crate::gop::into_frame_buffer_options;
 fn main() -> Result<core::convert::Infallible, &'static str> {
     info!("loading tntos2...");
 
-    let memory_map =
-        boot::memory_map(boot::MemoryType::LOADER_DATA).map_err(|_| "failed to load memmap")?;
-    debug!("memmap loaded");
-
     let mut rootdir = rootdir::open_root_dir().map_err(|_| "failed to open rootdir")?;
     debug!("rootdir opened");
 
@@ -38,6 +34,8 @@ fn main() -> Result<core::convert::Infallible, &'static str> {
     info!("volume loaded");
     */
     let volume_image = [];
+
+    let memory_map = unsafe { boot::exit_boot_services(None) };
 
     let options = shared::KernelEntrypointOptions {
         frame_buffer: into_frame_buffer_options(gop),
@@ -58,10 +56,6 @@ fn main() -> Result<core::convert::Infallible, &'static str> {
         image: uefi::boot::image_handle(),
         table: uefi::table::system_table_raw().unwrap(),
     };
-
-    unsafe {
-        let _ = boot::exit_boot_services(None);
-    }
 
     entry(options)
 }
