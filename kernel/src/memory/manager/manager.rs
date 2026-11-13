@@ -52,8 +52,8 @@ impl MemoryManager {
     pub fn is_allocated(&self, frame: usize) -> bool {
         let arr_idx = frame >> 3;
         let bit_offset = frame & 0b111;
-        if let Some(line) = self.alloc_map.get(arr_idx) {
-            line & (1 << bit_offset) != 0
+        if self.range.contains(&frame) {
+            self.alloc_map[arr_idx] & (1 << bit_offset) != 0
         } else {
             true // とりあえず使用中ってことにする
         }
@@ -62,13 +62,12 @@ impl MemoryManager {
         let arr_idx = frame >> 3;
         let bit_offset = frame & 0b111;
         let bit = 1 << bit_offset;
-        let Some(line) = self.alloc_map.get_mut(arr_idx) else {
-            return;
-        };
-        if allocated {
-            *line |= bit;
-        } else {
-            *line &= !bit;
+        if self.range.contains(&frame) {
+            if allocated {
+                self.alloc_map[arr_idx] |= bit;
+            } else {
+                self.alloc_map[arr_idx] &= !bit;
+            }
         }
     }
 
