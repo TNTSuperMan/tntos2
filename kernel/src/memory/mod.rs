@@ -6,7 +6,7 @@ mod paging;
 mod segment;
 pub mod uefi_mmap;
 
-const KERNEL_CS: u16 = 1 << 3;
+pub const KERNEL_CS: u16 = 1 << 3;
 const KERNEL_SS: u16 = 2 << 3;
 
 pub fn init() {
