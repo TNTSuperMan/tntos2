@@ -18,7 +18,7 @@ impl FrameId {
 }
 
 pub struct MemoryManager {
-    alloc_map: [u8; MemoryManager::FRAME_COUNT / 8], // 4MiBになる
+    alloc_map: [u8; MemoryManager::FRAME_COUNT / 8],
     pub range: Range<usize>,
 }
 impl MemoryManager {
@@ -27,7 +27,7 @@ impl MemoryManager {
         range: 0..0,
     };
 
-    pub const MAX_PHY_MEM_BYTES: usize = 1024 * 1024 * 1024 * 128; // 128GiB
+    pub const MAX_PHY_MEM_BYTES: usize = 1024 * 1024 * 1024 * 1; // 1GiB
     pub const FRAME_COUNT: usize = MemoryManager::MAX_PHY_MEM_BYTES / FrameId::BYTES_PER_FRAME;
 
     fn is_allocated(&self, frame: usize) -> bool {

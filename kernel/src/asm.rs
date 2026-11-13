@@ -84,7 +84,19 @@ pub fn set_ds_all(value: u16) {
 }
 
 pub fn set_csss(cs: u16, ss: u16) {
-    todo!()
+    let cs_64 = cs as u64;
+    unsafe {
+        core::arch::asm!(
+            "mov ss, si
+            push {}
+            push 2f
+            retfq
+            2:
+            ",
+            in(reg) cs_64,
+            in("si") ss,
+        )
+    }
 }
 
 pub fn set_cr3(value: u64) {
