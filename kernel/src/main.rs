@@ -81,11 +81,31 @@ extern "sysv64" fn main() -> ! {
         println!("{device:?}");
     }
 
+    let mut mx = 0i32;
+    let mut my = 0i32;
     loop {
         core::hint::spin_loop();
         poll_xhc();
         if let Some(ev) = xhc::try_read_input() {
-            println!("{ev:?}");
+            match ev {
+                xhc::InputEvent::Mouse { dx, dy, .. } => {
+                    mx = mx.wrapping_add(dx as i32).max(0).min(width as i32);
+                    my = my.wrapping_add(dy as i32).max(0).min(height as i32);
+                    SCREEN
+                        .lock()
+                        .draw_rect(mx as u32, my as u32, 10, 10, Color::BLUE);
+                }
+                xhc::InputEvent::Key {
+                    usage,
+                    pressed,
+                    character,
+                    modifiers,
+                } => {
+                    if pressed && let Some(c) = character {
+                        print!("{c}");
+                    }
+                }
+            }
         }
     }
 }
