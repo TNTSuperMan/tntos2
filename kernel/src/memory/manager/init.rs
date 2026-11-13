@@ -10,6 +10,10 @@ use crate::memory::{
 
 const UEFI_PAGE_BYTES: u64 = 4096;
 
+fn into_frame(val: u64) -> usize {
+    (val as usize).div_ceil(BYTES_PER_FRAME)
+}
+
 pub fn init() {
     let mut memory_manager = MemoryManager::ZEROED;
 
@@ -20,8 +24,8 @@ pub fn init() {
     for desc in memory_map.entries() {
         if available_end < desc.phys_start {
             memory_manager.mark_allocated(
-                available_end as usize / BYTES_PER_FRAME,
-                (desc.phys_start - available_end) as usize / BYTES_PER_FRAME,
+                into_frame(available_end),
+                into_frame(desc.phys_start - available_end),
             );
         }
         let phys_end = desc.phys_start + desc.page_count * UEFI_PAGE_BYTES;
@@ -29,12 +33,12 @@ pub fn init() {
             available_end = phys_end;
         } else {
             memory_manager.mark_allocated(
-                desc.phys_start as usize / BYTES_PER_FRAME,
-                (desc.page_count * UEFI_PAGE_BYTES) as usize / BYTES_PER_FRAME,
+                into_frame(desc.phys_start),
+                into_frame(desc.page_count * UEFI_PAGE_BYTES),
             );
         }
     }
-    memory_manager.range = 1..(available_end as usize / BYTES_PER_FRAME);
+    memory_manager.range = 1..into_frame(available_end);
 
     *MEMORY_MANAGER.lock() = memory_manager;
 }
