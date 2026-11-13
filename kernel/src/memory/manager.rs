@@ -7,13 +7,17 @@ use crate::memory::uefi_mmap::is_available;
 #[derive(Clone, Copy)]
 pub struct FrameId(usize);
 impl FrameId {
-    pub const BYTES_PER_FRAME: usize = 4096;
+    pub const BYTES_PER_FRAME: usize = 4096 * 512;
 
     pub fn id(&self) -> usize {
         self.0
     }
     pub fn frame(&self) -> *mut () {
-        unsafe { core::ptr::null_mut::<[u8; 4096]>().add(self.id()).cast() }
+        unsafe {
+            core::ptr::null_mut::<[u8; FrameId::BYTES_PER_FRAME]>()
+                .add(self.id())
+                .cast()
+        }
     }
 }
 
@@ -27,7 +31,7 @@ impl MemoryManager {
         range: 0..0,
     };
 
-    pub const MAX_PHY_MEM_BYTES: usize = 1024 * 1024 * 1024 * 1; // 1GiB
+    pub const MAX_PHY_MEM_BYTES: usize = 1024 * 1024 * 1024 * 128; // 1GiB
     pub const FRAME_COUNT: usize = MemoryManager::MAX_PHY_MEM_BYTES / FrameId::BYTES_PER_FRAME;
 
     fn is_allocated(&self, frame: usize) -> bool {
