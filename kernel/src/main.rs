@@ -3,6 +3,7 @@
 #![feature(abi_x86_interrupt)]
 
 use crate::{
+    memory::manager::MEMORY_MANAGER,
     pci::DEVICES,
     screen::{Color, SCREEN},
     xhc::poll_xhc,
@@ -69,6 +70,15 @@ extern "sysv64" fn main() -> ! {
 
     for device in DEVICES.get().unwrap().iter() {
         println!("{device:?}");
+    }
+
+    let mut frames = MEMORY_MANAGER.lock().allocate(1).unwrap();
+    let s = &mut frames.as_mut_slice()[0];
+    for (i, c) in s.iter_mut().enumerate() {
+        if i % 1024 * 1024 == 0 {
+            print!(".");
+        }
+        *c = i as u8;
     }
 
     loop {

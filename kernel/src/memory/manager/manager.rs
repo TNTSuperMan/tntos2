@@ -23,6 +23,18 @@ impl Frames {
         }
     }
 }
+impl core::fmt::Debug for Frames {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Frames #{} .. #{}, addr: {:>016X}..{:>016X}",
+            self.frameid,
+            self.frameid + self.length,
+            self.as_slice().as_ptr().addr(),
+            unsafe { self.as_slice().as_ptr().add(self.length) }.addr(),
+        )
+    }
+}
 
 pub struct MemoryManager {
     alloc_map: [u8; MemoryManager::FRAME_COUNT / 8],
