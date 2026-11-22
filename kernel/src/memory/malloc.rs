@@ -26,7 +26,7 @@ impl SimpleBumpMalloc {
             NonNull::new(unsafe { self.frame.as_mut_ptr().byte_add(begin_at) as *mut [u8] })
                 .ok_or(AllocError)
         } else {
-            self.index = 0;
+            self.index = layout.size();
             let old_frame = core::mem::replace(
                 &mut self.frame,
                 MEMORY_MANAGER
