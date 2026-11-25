@@ -220,7 +220,7 @@ pub fn load_kernel(
         // MEMO: エントリポイントの関数が終了しないため、optionsはdropしない
         // そのためこのアドレス渡しによるUse-after-Freeは起こり得ない
         // 関数呼び出しの安全性についてはしらん
-        let fn_ptr: *const shared::KernelEntryPoint = core::ptr::without_provenance(entrypoint);
-        unsafe { (*fn_ptr)(core::ptr::addr_of!(options)) }
+        let fn_ptr: shared::KernelEntryPoint = unsafe { core::mem::transmute(entrypoint) };
+        (fn_ptr)(core::ptr::addr_of!(options))
     })
 }
