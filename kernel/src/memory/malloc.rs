@@ -23,8 +23,11 @@ impl SimpleBumpMalloc {
         self.index += layout.size();
         if self.index < self.frame.bytes_len() {
             // SAFETY: self.indexがself.frameの正しい長さ未満にあることは確認されました
-            NonNull::new(unsafe { self.frame.as_mut_ptr().byte_add(begin_at) as *mut [u8] })
-                .ok_or(AllocError)
+            NonNull::new(core::ptr::slice_from_raw_parts_mut(
+                unsafe { self.frame.as_ptr().cast_mut().byte_add(begin_at) },
+                layout.size(),
+            ))
+            .ok_or(AllocError)
         } else {
             self.index = layout.size();
             let old_frame = core::mem::replace(
@@ -36,7 +39,11 @@ impl SimpleBumpMalloc {
             );
             core::mem::forget(old_frame);
 
-            NonNull::new(self.frame.as_mut_ptr() as *mut [u8]).ok_or(AllocError)
+            NonNull::new(core::ptr::slice_from_raw_parts_mut(
+                self.frame.as_ptr().cast_mut(),
+                layout.size(),
+            ))
+            .ok_or(AllocError)
         }
     }
 }

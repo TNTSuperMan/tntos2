@@ -1,25 +1,23 @@
-use core::ops::Range;
+use core::ops::{Range, RangeInclusive};
 
 pub const BYTES_PER_FRAME: usize = 4096;
 
 type Frame = [u8; BYTES_PER_FRAME];
 
-pub struct Frames {
-    frameid: usize,
-    length: usize,
-}
+#[derive(Clone, PartialEq, Eq)]
+pub struct Frames(RangeInclusive<usize>);
 impl Frames {
-    pub fn as_ptr(&self) -> *const Frame {
-        unsafe { core::ptr::null::<Frame>().add(self.frameid) }
+    pub fn as_ptr(&self) -> *const u8 {
+        core::ptr::without_provenance(*self.0.start())
     }
-    pub fn as_mut_ptr(&self) -> *mut Frame {
-        unsafe { core::ptr::null_mut::<Frame>().add(self.frameid) }
+    pub fn as_slice_ptr(&self) -> *const [u8] {
+        core::ptr::slice_from_raw_parts(self.as_ptr(), self.bytes_len())
+    }
+    pub fn pages_len(&self) -> usize {
+        self.0.clone().count()
     }
     pub fn bytes_len(&self) -> usize {
-        self.length * BYTES_PER_FRAME
-    }
-    pub fn as_slice(&self) -> &[Frame] {
-        unsafe { core::slice::from_raw_parts(self.as_ptr(), self.length) }
+        self.pages_len() * BYTES_PER_FRAME
     }
 }
 impl core::fmt::Debug for Frames {
@@ -27,10 +25,10 @@ impl core::fmt::Debug for Frames {
         write!(
             f,
             "Frames #{} .. #{}, addr: {:>016X}..{:>016X}",
-            self.frameid,
-            self.frameid + self.length,
-            self.as_slice().as_ptr().addr(),
-            unsafe { self.as_slice().as_ptr().add(self.length) }.addr(),
+            self.0.start(),
+            self.0.end(),
+            self.0.start() * BYTES_PER_FRAME,
+            self.0.end() * BYTES_PER_FRAME,
         )
     }
 }
@@ -89,14 +87,11 @@ impl MemoryManager {
                 }
             }
             self.mark_allocated(curr_frame, len);
-            return Some(Frames {
-                frameid: curr_frame,
-                length: len,
-            });
+            return Some(Frames(curr_frame..=(curr_frame + len - 1)));
         }
     }
     pub fn free(&mut self, frames: Frames) -> Result<(), ()> {
-        for i in frames.frameid..(frames.frameid + frames.length) {
+        for i in frames.0 {
             if self.is_allocated(i) {
                 self.set_allocated(i, false);
             } else {

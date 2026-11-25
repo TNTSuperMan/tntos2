@@ -1,5 +1,3 @@
-use spin::Mutex;
-
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
 pub struct Descriptor {
@@ -11,16 +9,14 @@ pub struct Descriptor {
     _reserved: u32,
 }
 impl Descriptor {
-    pub const fn zeroed() -> Self {
-        Self {
-            offset_low: 0,
-            segment_selector: 0,
-            attribute: 0,
-            offset_middle: 0,
-            offset_high: 0,
-            _reserved: 0,
-        }
-    }
+    const ZEROED: Self = Self {
+        offset_low: 0,
+        segment_selector: 0,
+        attribute: 0,
+        offset_middle: 0,
+        offset_high: 0,
+        _reserved: 0,
+    };
     pub fn new(attribute: u16, offset: u64, segment_selector: u16) -> Self {
         Self {
             attribute,
@@ -51,4 +47,4 @@ pub fn make_attr(typ: DescriptorType, privilege_lv: u8, present: bool, ist: u8) 
         | if present { 0b1000000000000000 } else { 0 }
 }
 
-pub static IDT: Mutex<[Descriptor; 256]> = Mutex::new([Descriptor::zeroed(); 256]);
+pub static IDT: [Descriptor; 256] = [Descriptor::ZEROED; 256];

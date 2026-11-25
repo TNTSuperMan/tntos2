@@ -7,24 +7,28 @@ use crate::{
 mod descriptor;
 
 pub fn init() {
-    let mut idt = IDT.lock();
-
+    let idt = IDT.as_ptr().cast_mut();
     {
-        fn addc<const ID: u8>(idt: &mut [Descriptor; 256]) {
-            idt[ID as usize] = Descriptor::new(
-                make_attr(DescriptorType::InterruptGate, 0, true, 0),
-                (handle_fault_with_code::<ID> as *const ()).addr() as u64,
-                KERNEL_CS,
-            );
+        fn addc<const ID: u8>(idt: *mut Descriptor) {
+            unsafe {
+                // SAFETY: IDはつねにu8(0..=256)の範囲内なのでダングリングポインタにはなり得ない
+                // まだ割り込みは有効じゃないのでデータ競合にもならないはず
+                idt.add(ID as usize).write(Descriptor::new(
+                    make_attr(DescriptorType::InterruptGate, 0, true, 0),
+                    (handle_fault_with_code::<ID> as *const ()).addr() as u64,
+                    KERNEL_CS,
+                ));
+            }
         }
-        fn addn<const ID: u8>(idt: &mut [Descriptor; 256]) {
-            idt[ID as usize] = Descriptor::new(
-                make_attr(DescriptorType::InterruptGate, 0, true, 0),
-                (handle_fault_no_code::<ID> as *const ()).addr() as u64,
-                KERNEL_CS,
-            );
+        fn addn<const ID: u8>(idt: *mut Descriptor) {
+            unsafe {
+                idt.add(ID as usize).write(Descriptor::new(
+                    make_attr(DescriptorType::InterruptGate, 0, true, 0),
+                    (handle_fault_no_code::<ID> as *const ()).addr() as u64,
+                    KERNEL_CS,
+                ));
+            }
         }
-        let idt = &mut idt;
         addc::<0>(idt); // DE
         addc::<1>(idt); // BD
         addc::<3>(idt); // BP
@@ -48,7 +52,7 @@ pub fn init() {
 
     load_idt(&LidtField {
         limit: size_of::<[Descriptor; 256]>() as u16 - 1,
-        offset: idt.as_ptr().addr() as u64,
+        offset: idt.addr() as u64,
     });
 }
 
