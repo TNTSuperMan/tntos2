@@ -35,12 +35,12 @@ fn main() -> Result<core::convert::Infallible, &'static str> {
     */
     let volume_image = [];
 
-    let memory_map = unsafe { boot::exit_boot_services(None) };
+    let memory_map = core::mem::ManuallyDrop::new(unsafe { boot::exit_boot_services(None) });
 
     let options = shared::KernelEntrypointOptions {
         frame_buffer: into_frame_buffer_options(gop),
         memory_map: shared::MemoryMap {
-            // memory_mapはこの関数の返りまで生存する entryは値を返さない(Infallible) そのためUse-After-Freeは起こり得ない
+            // ManuallyDropによりメモリマップのバッファをDropしなくなるのでカーネルでUse-After-Freeはしない
             ptr: memory_map.buffer().as_ptr(),
             len: memory_map.buffer().len(),
 

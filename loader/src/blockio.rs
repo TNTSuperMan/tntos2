@@ -37,11 +37,17 @@ fn read_blocks(
     let buf = boot::allocate_pool(MemoryType::LOADER_DATA, bytes)?;
 
     {
-        let mut_slice = unsafe { core::slice::from_raw_parts_mut(buf.as_ptr(), bytes) };
+        let mut_slice = unsafe {
+            // SAFETY: このスコープ内にこれ以外の参照は無い
+            core::slice::from_raw_parts_mut(buf.as_ptr(), bytes)
+        };
         block_io.read_blocks(media_id, 0, mut_slice)?;
     }
 
-    Ok(unsafe { core::slice::from_raw_parts(buf.as_ptr(), bytes) })
+    Ok(unsafe {
+        // SAFETY: bufを変更する者はいない(上のブロックにあるmut_sliceはスコープを抜けてる)
+        core::slice::from_raw_parts(buf.as_ptr(), bytes)
+    })
 }
 
 pub fn read_volume() -> uefi::Result<&'static [u8]> {

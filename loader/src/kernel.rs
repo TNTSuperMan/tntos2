@@ -161,19 +161,18 @@ unsafe fn copy_load_segments(elf: &[u8]) {
         unsafe {
             core::ptr::copy_nonoverlapping(
                 elf.as_ptr().add(phdr.offset() as usize),
-                core::ptr::null_mut::<u8>().add(phdr.vaddr() as usize),
+                core::ptr::without_provenance_mut(phdr.vaddr() as usize),
                 phdr.filesz() as usize,
             );
         }
 
-        let remain_bytes = phdr.memsz() - phdr.filesz();
+        let remain_addr = (phdr.vaddr() + phdr.filesz()) as usize;
+        let remain_bytes = (phdr.memsz() - phdr.filesz()) as usize;
         unsafe {
             core::ptr::write_bytes(
-                core::ptr::null_mut::<u8>()
-                    .add(phdr.vaddr() as usize)
-                    .add(phdr.filesz() as usize),
+                core::ptr::without_provenance_mut::<u8>(remain_addr),
                 0,
-                remain_bytes as usize,
+                remain_bytes,
             );
         }
     }
@@ -192,14 +191,15 @@ pub fn load_kernel(
         )
         .map_err(|_| "failed to open kernel")?;
     let kernel_data = FileBuffer::new(kernel_file)?;
+    let kernel_slice = kernel_data.as_slice();
 
-    let kernel_addr_range = calc_load_address_range(kernel_data.as_slice());
-    let num_pages = kernel_addr_range.clone().count().div_ceil(0x1000);
+    let kernel_addr_range = calc_load_address_range(kernel_slice);
+    let num_pages = kernel_addr_range.clone().count().div_ceil(0x1000) as usize;
 
     let entrypoint = Elf64Ehdr {
-        slice: kernel_data.as_slice(),
+        slice: kernel_slice,
     }
-    .entry();
+    .entry() as usize;
 
     log::debug!(
         "kernel file loaded. range: {:>016X} ~ {:>016X} ({num_pages} pages), entry: {entrypoint:>016X}",
@@ -210,17 +210,17 @@ pub fn load_kernel(
     boot::allocate_pages(
         AllocateType::Address(kernel_addr_range.start),
         MemoryType::LOADER_DATA,
-        num_pages as usize,
+        num_pages,
     )
     .map_err(|_| "failed to alloc kernel page")?;
 
-    unsafe { copy_load_segments(kernel_data.as_slice()) };
+    unsafe { copy_load_segments(kernel_slice) };
 
     Ok(move |options| {
         // MEMO: エントリポイントの関数が終了しないため、optionsはdropしない
         // そのためこのアドレス渡しによるUse-after-Freeは起こり得ない
         // 関数呼び出しの安全性についてはしらん
-        let fn_ptr: shared::KernelEntryPoint = unsafe { core::mem::transmute(entrypoint) };
-        (fn_ptr)(core::ptr::addr_of!(options));
+        let fn_ptr: *const shared::KernelEntryPoint = core::ptr::without_provenance(entrypoint);
+        unsafe { (*fn_ptr)(core::ptr::addr_of!(options)) }
     })
 }

@@ -24,12 +24,14 @@ impl FileBuffer {
         let file_buf_ptr = boot::allocate_pool(MemoryType::LOADER_DATA, size)
             .map_err(|_| "failed to alloc file buf")?;
 
-        let file_buf_slice =
-            unsafe { core::slice::from_raw_parts_mut(file_buf_ptr.as_ptr(), size) };
-        file.into_regular_file()
-            .unwrap()
-            .read(file_buf_slice)
-            .map_err(|_| "failed to read file")?;
+        {
+            let file_buf_slice =
+                unsafe { core::slice::from_raw_parts_mut(file_buf_ptr.as_ptr(), size) };
+            file.into_regular_file()
+                .unwrap()
+                .read(file_buf_slice)
+                .map_err(|_| "failed to read file")?;
+        }
 
         Ok(FileBuffer {
             buffer: file_buf_ptr,
